@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Todo;
 use Illuminate\Http\Request;
+use App\Http\Requests\TodoRequest;
+use App\Http\Resources\TodoResource;
 
 class TodoController extends Controller
 {
@@ -12,13 +14,12 @@ class TodoController extends Controller
      */
     public function index()
     {
-        $todos = Todo::all();
+        $todos = Todo::latest()->get();
 
-        if ($todos->isEmpty()) {
-            return response()->json(['message' => 'No data found'], 404);
-        }
-
-        return response()->json(['message' => 'Todo list retrieved successfully', 'data' => $todos], 200);
+        return response([
+            'message' => 'success',
+            'todos' => TodoResource::collection($todos),
+        ], 200);
     }
 
     /**
@@ -32,22 +33,33 @@ class TodoController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(TodoRequest $todoRequest)
     {
-        $todo = Todo::create($request->all());
-        return response()->json(['message' => 'Todo created successfully', 'data' => $todo], 201);
+        $todoRequest->validated();
+
+        $saveData =  Todo::create([
+            'text' => $todoRequest->text,
+            'completed' => $todoRequest->completed,
+        ]);
+
+        if ($saveData) {
+            return response([
+                'message' => 'success',
+                'todo' => new TodoResource($saveData),
+            ], 201);
+        } else {
+            return response([
+                'message' => 'error',
+            ], 500);
+        }
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(Todo $todo)
+    public function show()
     {
-        if ($todo) {
-            return response()->json(['message' => 'Todo retrieved successfully', 'data' => $todo], 200);
-        } else {
-            return response()->json(['message' => 'No data found'], 404);
-        }
+        //
     }
 
     /**
@@ -61,18 +73,49 @@ class TodoController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Todo $todo)
+    public function update(TodoRequest $todoRequest, Todo $todo)
     {
-        $todo->update($request->all());
-        return response()->json(['message' => 'Todo updated successfully', 'data' => $todo], 200);
+        $todoRequest->validated();
+
+        $updatedData = $todo->update([
+            'text' => $todoRequest->text,
+            'completed' => $todo->completed == 1 ? 0 : 1,
+        ]);
+
+        if ($updatedData) {
+            return response([
+                'message' => 'success',
+                'todo' => $updatedData,
+            ], 200);
+        } else {
+            return response([
+                'message' => 'error',
+            ], 500);
+        }
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Todo $todo)
+    public function destroy($todo)
     {
-        $todo->delete();
-        return response()->json(['message' => 'Todo deleted successfully'], 204);
+        if (Todo::find($todo->id)) {
+            $deleted = Todo::where('id', $todo)->deleted();
+
+            if ($deleted) {
+                return response([
+                    'message' => 'success',
+                    'todo' => $deleted,
+                ], 200);
+            } else {
+                return response([
+                    'message' => 'error',
+                ], 500);
+            }
+        } else {
+            return response([
+                'message' => '404',
+            ], 500);
+        }
     }
 }
