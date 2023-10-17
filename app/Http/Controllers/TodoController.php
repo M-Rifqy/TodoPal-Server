@@ -39,7 +39,7 @@ class TodoController extends Controller
 
         $saveData =  Todo::create([
             'text' => $todoRequest->text,
-            'completed' => $todoRequest->completed,
+            'completed' => 0,
         ]);
 
         if ($saveData) {
