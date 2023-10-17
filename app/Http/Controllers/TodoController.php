@@ -73,12 +73,12 @@ class TodoController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(TodoRequest $todoRequest, Todo $todo)
+    public function update(Request $todoRequest, Todo $todo)
     {
-        $todoRequest->validated();
+        // $todoRequest->validated();
 
         $updatedData = $todo->update([
-            'text' => $todoRequest->text,
+            'text' => empty($todoRequest->text) ? $todo->text : $todoRequest->text,
             'completed' => $todo->completed == 1 ? 0 : 1,
         ]);
 
