@@ -97,24 +97,22 @@ class TodoController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy($todo)
+    public function destroy($id)
     {
-        if (Todo::find($todo->id)) {
-            $deleted = Todo::where('id', $todo)->deleted();
+        $todo = Todo::find($id);
 
-            if ($deleted) {
-                return response([
-                    'message' => 'success',
-                    'todo' => $deleted,
-                ], 200);
-            } else {
-                return response([
-                    'message' => 'error',
-                ], 500);
-            }
+        if (!$todo) {
+            return response(['message' => 'Todo not found'], 404);
+        }
+
+        if ($todo->delete()) {
+            return response([
+                'message' => 'Todo deleted successfully',
+                'todo' => $todo,
+            ], 200);
         } else {
             return response([
-                'message' => '404',
+                'message' => 'Error deleting todo',
             ], 500);
         }
     }
